@@ -8,6 +8,8 @@
 #ifndef WBDL_WBDL_BASE_HPP_
 #define WBDL_WBDL_BASE_HPP_
 
+namespace wbdl {
+
 enum class Color
 {
 	black = 0,
@@ -22,6 +24,8 @@ enum class FrameBufferOrientation
 
 struct ScreenParameters
 {
+	unsigned int bufferSize();
+
 	unsigned int sizeX;
 	unsigned int sizeY;
 
@@ -30,7 +34,11 @@ struct ScreenParameters
 
 struct FrameBuffer
 {
-	char* buffer;
+	/**
+	 * For those devices or people that may have problems with heap on MCU,
+	 * I don't use unique_ptr here, so manage memory manually.
+	 */
+	char* buffer = nullptr;
 
 	unsigned int dirtyX0 = 0;
 	unsigned int dirtyY0 = 0;
@@ -38,5 +46,7 @@ struct FrameBuffer
 	unsigned int dirtyX1 = 0;
 	unsigned int dirtyY1 = 0;
 };
+
+} // namespace wbdl
 
 #endif /* WBDL_WBDL_BASE_HPP_ */

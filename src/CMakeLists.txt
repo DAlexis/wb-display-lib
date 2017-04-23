@@ -54,5 +54,5 @@ add_subdirectory(wbdl)
 # To enable ctest usage
 enable_testing()
 
-add_subdirectory(unit-tests)
+add_subdirectory(tests)
 #add_subdirectory(functional-tests)

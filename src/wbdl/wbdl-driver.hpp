@@ -10,13 +10,16 @@
 
 #include "wbdl-base.hpp"
 
-class IWBDLDriver
+namespace wbdl {
+
+class IDisplayDriver
 {
 public:
-	virtual ~IWBDLDriver() {}
+	virtual ~IDisplayDriver() {}
 	virtual ScreenParameters& parameters() = 0;
-	virtual void updateScreen(const FrameBuffer& frameBuffer);
+	virtual bool updateScreen(const FrameBuffer& frameBuffer) = 0;
 };
 
+} // namespace wbdl
 
 #endif /* WBDL_WBDL_DRIVER_HPP_ */

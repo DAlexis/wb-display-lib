@@ -1,6 +1,15 @@
 #include "wbdl.hpp"
 
-Display::Display(IWBDLDriver& driver) :
+using namespace wbdl;
+
+unsigned int ScreenParameters::bufferSize()
+{
+	return sizeX * sizeY / 8;
+}
+
+//////////////////////////
+
+Display::Display(IDisplayDriver& driver) :
 	m_driver(driver)
 {
 }

@@ -10,19 +10,19 @@
 
 #include "wbdl-driver.hpp"
 
+
+namespace wbdl {
+
 class Display
 {
 public:
-	Display(IWBDLDriver& driver);
+	Display(IDisplayDriver& driver);
 
 private:
-	IWBDLDriver& m_driver;
+	IDisplayDriver& m_driver;
 };
 
-
-
-
-
+}
 
 
 #endif /* WBDL_WBDL_HPP_ */
