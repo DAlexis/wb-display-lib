@@ -16,7 +16,7 @@ struct fclose_deleter
 	void operator()(FILE *fp) { if (fp != nullptr) fclose(fp); }
 };
 
-PNGDriver::PNGDriver(const std::string& filename, unsigned int sizeX, unsigned int sizeY, bool fbIsVertial) :
+PNGDriver::PNGDriver(unsigned int sizeX, unsigned int sizeY, bool fbIsVertial, const std::string& filename) :
 		m_filename(filename)
 {
 	m_parameters.sizeX = sizeX;
@@ -35,6 +35,11 @@ PNGDriver::~PNGDriver()
 {
 	if (m_parameters.fbOrientation == FrameBufferOrientation::vertical && m_horizontalFrameBuffer != nullptr)
 		delete[] m_horizontalFrameBuffer;
+}
+
+void PNGDriver::setFilename(const std::string& filename)
+{
+	m_filename = filename;
 }
 
 wbdl::ScreenParameters& PNGDriver::parameters()

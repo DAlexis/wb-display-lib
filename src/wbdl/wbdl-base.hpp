@@ -24,7 +24,7 @@ enum class FrameBufferOrientation
 
 struct ScreenParameters
 {
-	unsigned int bufferSize();
+	int bufferSize();
 
 	unsigned int sizeX;
 	unsigned int sizeY;
@@ -34,6 +34,9 @@ struct ScreenParameters
 
 struct FrameBuffer
 {
+	void clearDirty();
+	bool isDirty();
+	void makePointDirty(unsigned int x, unsigned int y);
 	/**
 	 * For those devices or people that may have problems with heap on MCU,
 	 * I don't use unique_ptr here, so manage memory manually.
@@ -43,6 +46,10 @@ struct FrameBuffer
 	unsigned int dirtyX0 = 0;
 	unsigned int dirtyY0 = 0;
 
+	/**
+	 * dirtyX1 is coordinate of point after latest dirty pixel,
+	 * so dirtyX1 may == sizeX+1
+	 */
 	unsigned int dirtyX1 = 0;
 	unsigned int dirtyY1 = 0;
 };

@@ -15,8 +15,10 @@
 class PNGDriver : public wbdl::IDisplayDriver
 {
 public:
-	PNGDriver(const std::string& filename, unsigned int sizeX, unsigned int sizeY, bool fbIsVertial = false);
+	PNGDriver(unsigned int sizeX, unsigned int sizeY, bool fbIsVertial = false, const std::string& filename = "display.png");
 	~PNGDriver();
+
+	void setFilename(const std::string& filename);
 
 	wbdl::ScreenParameters& parameters() override;
 	bool updateScreen(const wbdl::FrameBuffer& frameBuffer) override;
