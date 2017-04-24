@@ -16,30 +16,28 @@ enum class Color
 	white
 };
 
-enum class FrameBufferOrientation
+enum class BitsOrder
 {
-	horizontal = 0,
-	vertical
+	vertical = 0,
 };
 
-struct ScreenParameters
-{
-	int bufferSize();
-
-	unsigned int sizeX;
-	unsigned int sizeY;
-
-	FrameBufferOrientation fbOrientation = FrameBufferOrientation::horizontal;
-};
-
+/**
+ * This class store frame with defined bits order
+ * and make trivial operations like putPixel and getPixel
+ */
 struct FrameBuffer
 {
 	void clearDirty();
 	bool isDirty();
+	unsigned int bufferSize();
 	void makePointDirty(unsigned int x, unsigned int y);
+
+	void putPixelNoDirty(int x, int y, Color c);
+	Color getPixel(int x, int y) const;
+
 	/**
-	 * For those devices or people that may have problems with heap on MCU,
-	 * I don't use unique_ptr here, so manage memory manually.
+	 * Heap may be not avaliable on your MCU, so you
+	 * can use even static array as frame buffer
 	 */
 	char* buffer = nullptr;
 
@@ -52,6 +50,11 @@ struct FrameBuffer
 	 */
 	unsigned int dirtyX1 = 0;
 	unsigned int dirtyY1 = 0;
+
+	unsigned int width;
+	unsigned int height;
+
+	BitsOrder order = BitsOrder::vertical;
 };
 
 } // namespace wbdl

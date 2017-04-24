@@ -18,9 +18,13 @@ public:
 	Display(IDisplayDriver& driver, FrameBuffer& frameBuffer);
 	void updateScreen();
 
+	// Filling
+	void fill(Color c = Color::white);
+
 	// Graphic primitives
-	void putPixel(int x, int y, Color c);
+	void putPixel(int x, int y, Color c = Color::white);
 	void line(int x0, int y0, int x1, int y1, Color c = Color::white);
+	void circle(int x0, int y0, int r, Color c = Color::white);
 
 	// Coordinate constants
 	int left();
@@ -34,10 +38,8 @@ public:
 
 private:
 	void enlargeDirty(int x, int y);
-	void putPixelNoDirty(int x, int y, Color c);
 	IDisplayDriver& m_driver;
 	FrameBuffer& m_frameBuffer;
-	const ScreenParameters& m_parameters;
 };
 
 }

@@ -4,12 +4,8 @@
 
 using namespace wbdl;
 
-int ScreenParameters::bufferSize()
-{
-	return sizeX * sizeY / 8;
-}
-
 //////////////////////////
+// FrameBuffer
 
 void FrameBuffer::clearDirty()
 {
@@ -23,6 +19,11 @@ void FrameBuffer::clearDirty()
 bool FrameBuffer::isDirty()
 {
 	return dirtyX0 != dirtyX1;
+}
+
+unsigned int FrameBuffer::bufferSize()
+{
+	return width * height / 8;
 }
 
 void FrameBuffer::makePointDirty(unsigned int x, unsigned int y)
@@ -45,12 +46,43 @@ void FrameBuffer::makePointDirty(unsigned int x, unsigned int y)
 		dirtyY1 = y+1;
 }
 
+void FrameBuffer::putPixelNoDirty(int x, int y, Color c)
+{
+	if (x < 0 || y < 0 || x >= int(width) || y >= int(height))
+		return;
+	unsigned int index;
+	switch(order)
+	{
+	case BitsOrder::vertical:
+		index = x + (y / 8) * width;
+		if (c == Color::white)
+			buffer[index] |= 1 << (y%8);
+		else
+			buffer[index] &= ~(1 << (y%8));
+		break;
+	}
+}
+
+Color FrameBuffer::getPixel(int x, int y) const
+{
+	if (x < 0 || y < 0 || x >= int(width) || y >= int(height))
+		return Color::black;
+	unsigned int index;
+	switch(order)
+	{
+	case BitsOrder::vertical:
+		index = x + (y / 8) * width;
+		return (buffer[index] & (1 << (y%8))) != 0 ? Color::white : Color::black;
+	}
+	return Color::black;
+}
+
 //////////////////////////
+// Display
 
 Display::Display(IDisplayDriver& driver, FrameBuffer& frameBuffer) :
 	m_driver(driver),
-	m_frameBuffer(frameBuffer),
-	m_parameters(driver.parameters())
+	m_frameBuffer(frameBuffer)
 {
 }
 
@@ -62,7 +94,7 @@ void Display::updateScreen()
 
 void Display::putPixel(int x, int y, Color c)
 {
-	putPixelNoDirty(x, y, c);
+	m_frameBuffer.putPixelNoDirty(x, y, c);
 	m_frameBuffer.makePointDirty(x, y);
 }
 
@@ -71,23 +103,71 @@ void Display::line(int x0, int y0, int x1, int y1, Color c)
 	m_frameBuffer.makePointDirty(x0, y0);
 	m_frameBuffer.makePointDirty(x1, y1);
 
-	if (abs(x1-x0) > abs(y1-y0))
+	/**
+	 * It is a realization of Bresenham's line algorithm
+	 * without floats
+	 */
+	int dx = (x0 < x1) ? (x1 - x0) : (x0 - x1);
+	int dy = (y0 < y1) ? (y1 - y0) : (y0 - y1);
+	int sx = (x0 < x1) ? 1 : -1;
+	int sy = (y0 < y1) ? 1 : -1;
+
+	int err = ((dx > dy) ? dx : -dy) / 2;
+
+	for(;;)
 	{
-		if (x1 < x0)
-		{
-			std::swap(x0, x1);
-			std::swap(y0, y1);
+		m_frameBuffer.putPixelNoDirty(x0, y0, c);
+		if (x0 == x1 && y0 == y1) {
+			break;
 		}
-		for (int x = x0; x<=x1; x++)
-			putPixelNoDirty(x, y0 + (x-x0) * (y1 - y0) / (x1-x0), c);
-	} else {
-		if (y1 < y0)
+
+		int oldErr = err;
+		if (oldErr > -dx)
 		{
-			std::swap(x0, x1);
-			std::swap(y0, y1);
+			err -= dy;
+			x0 += sx;
 		}
-		for (int y = y0; y<=y1; y++)
-			putPixelNoDirty(x0 + (y-y0) * (x1 - x0) / (y1-y0), y, c);
+		if (oldErr < dy)
+		{
+			err += dx;
+			y0 += sy;
+		}
+	}
+}
+
+void Display::circle(int x0, int y0, int r, Color c)
+{
+	int x = 0;
+	int y = r;
+	int delta = 1 - 2 * r;
+	int error = 0;
+	while (x <= y)
+	{
+		m_frameBuffer.putPixelNoDirty(x0 + x, y0 + y, c);
+		m_frameBuffer.putPixelNoDirty(x0 + x, y0 - y, c);
+		m_frameBuffer.putPixelNoDirty(x0 - x, y0 + y, c);
+		m_frameBuffer.putPixelNoDirty(x0 - x, y0 - y, c);
+
+		m_frameBuffer.putPixelNoDirty(x0 + y, y0 + x, c);
+		m_frameBuffer.putPixelNoDirty(x0 + y, y0 - x, c);
+		m_frameBuffer.putPixelNoDirty(x0 - y, y0 + x, c);
+		m_frameBuffer.putPixelNoDirty(x0 - y, y0 - x, c);
+
+		error = 2 * (delta + y) - 1;
+		if ((delta < 0) && (error <= 0))
+		{
+		   delta += 2 * ++x + 1;
+		   continue;
+		}
+		error = 2 * (delta - x) - 1;
+		if ((delta > 0) && (error > 0))
+		{
+		   delta += 1 - 2 * --y;
+		   continue;
+		}
+		x++;
+		delta += 2 * (x - y);
+		y--;
 	}
 }
 
@@ -98,7 +178,7 @@ int Display::left()
 
 int Display::right()
 {
-	return m_parameters.sizeX-1;
+	return m_frameBuffer.width-1;
 }
 
 int Display::top()
@@ -108,39 +188,15 @@ int Display::top()
 
 int Display::bottom()
 {
-	return m_parameters.sizeY-1;
+	return m_frameBuffer.height-1;
 }
 
 int Display::centerX()
 {
-	return m_parameters.sizeX / 2;
+	return m_frameBuffer.width / 2;
 }
 
 int Display::centerY()
 {
-	return m_parameters.sizeY / 2;
-}
-
-void Display::putPixelNoDirty(int x, int y, Color c)
-{
-	if (x < 0 || y < 0 || x >= int(m_parameters.sizeX) || y >= int(m_parameters.sizeY))
-		return;
-	unsigned int index;
-	switch(m_parameters.fbOrientation)
-	{
-	case FrameBufferOrientation::horizontal:
-		index = x / 8 + y * m_parameters.sizeX / 8;
-		if (c == Color::white)
-			m_frameBuffer.buffer[index] |= 1 << (x%8);
-		else
-			m_frameBuffer.buffer[index] &= ~(1 << (x%8));
-		break;
-	case FrameBufferOrientation::vertical:
-		index = y / 8 + x * m_parameters.sizeY / 8;
-		if (c == Color::white)
-			m_frameBuffer.buffer[index] |= 1 << (x%8);
-		else
-			m_frameBuffer.buffer[index] &= ~(1 << (x%8));
-		break;
-	}
+	return m_frameBuffer.height / 2;
 }

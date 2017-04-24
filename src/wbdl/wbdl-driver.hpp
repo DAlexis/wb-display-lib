@@ -16,7 +16,6 @@ class IDisplayDriver
 {
 public:
 	virtual ~IDisplayDriver() {}
-	virtual ScreenParameters& parameters() = 0;
 	virtual bool updateScreen(const FrameBuffer& frameBuffer) = 0;
 };
 
